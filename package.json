@@ -1,0 +1,19 @@
+{
+  "author": "Michael Meister",
+  "scripts": {
+    "start": "ts-node src/index.ts",
+    "jmdict": "ts-node src/jmdict/toJson.ts",
+    "kanjidic2": "ts-node src/kanjidic2/toJson.ts",
+    "radkfilex": "ts-node src/radkfilex/toJson.ts",
+    "kradfilex": "ts-node src/kradfilex/toJson.ts"
+  },
+  "devDependencies": {
+    "@types/encoding-japanese": "^2.0.0",
+    "@types/xml2js": "^0.4.11",
+    "typescript": "^4.7.4"
+  },
+  "dependencies": {
+    "encoding-japanese": "^2.0.0",
+    "xml2js": "^0.4.23"
+  }
+}
