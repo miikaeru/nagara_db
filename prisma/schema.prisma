@@ -1,0 +1,259 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+//
+// First level tables
+//
+
+model Kanji {
+  id                 Int                  @id @default(autoincrement())
+  literal            String               @unique
+  codepoint          Kanji_Codepoint[]
+  radical            Kanji_Radical[]
+  misc               Kanji_Misc?
+  dic_ref            Kanji_DicRef[]
+  query_code         Kanji_QueryCode[]
+  reading            Kanji_Reading[]
+  meaning            Kanji_Meaning[]
+  nanori             Kanji_Nanori[]
+  kanji_misc_variant Kanji_Misc_Variant[]
+}
+
+model Radical {
+  id Int @id @default(autoincrement())
+
+  variant       Radical[]       @relation("variant")
+  radical       Radical?        @relation(name: "variant", fields: [radical_id], references: [id])
+  radical_id    Int?
+  kanji_radical Kanji_Radical[]
+  sequence      Int
+  literal       String          @unique
+}
+
+//
+// Second level tables
+//
+
+model Kanji_Codepoint {
+  id Int @id @default(autoincrement())
+
+  kanji    Kanji @relation(fields: [kanji_id], references: [id])
+  kanji_id Int
+
+  type            KwCodepointType @relation(fields: [kw_codepoint_id], references: [id])
+  kw_codepoint_id Int
+
+  value String
+}
+
+model Kanji_Radical {
+  id Int @id @default(autoincrement())
+
+  kanji    Kanji @relation(fields: [kanji_id], references: [id])
+  kanji_id Int
+
+  type    KwRadicalType? @relation(fields: [type_id], references: [id])
+  type_id Int?
+
+  value      Radical @relation(fields: [radical_id], references: [id])
+  radical_id Int
+}
+
+model Kanji_Misc {
+  id Int @id @default(autoincrement())
+
+  kanji    Kanji @relation(fields: [kanji_id], references: [id])
+  kanji_id Int   @unique
+
+  grade    KwGrade? @relation(fields: [grade_id], references: [id])
+  grade_id Int?
+
+  strokeCount    KwStrokeCount @relation(fields: [strokeCount_id], references: [id])
+  strokeCount_id Int
+
+  jlpt    KwJLPT? @relation(fields: [jlpt_id], references: [id])
+  jlpt_id Int?
+
+  rad_name Kanji_Misc_RadName[]
+
+  variant Kanji_Misc_Variant[]
+
+  freq Int?
+}
+
+model Kanji_DicRef {
+  id Int @id @default(autoincrement())
+
+  kanji    Kanji @relation(fields: [kanji_id], references: [id])
+  kanji_id Int
+
+  type            KwDicRefType @relation(fields: [kwDicRefType_id], references: [id])
+  kwDicRefType_id Int
+
+  mVol KwMorohashiVol? @relation(fields: [kwMorohashiVol_id], references: [id])
+
+  kwMorohashiVol_id Int?
+  mPage             Int?
+  value             String
+}
+
+model Kanji_QueryCode {
+  id Int @id @default(autoincrement())
+
+  kanji    Kanji @relation(fields: [kanji_id], references: [id])
+  kanji_id Int
+
+  type               KwQueryCodeType @relation(fields: [kwQueryCodeType_id], references: [id])
+  kwQueryCodeType_id Int
+
+  skipMiscalss      KwSkipMisclass? @relation(fields: [kwSkipMisclass_id], references: [id])
+  kwSkipMisclass_id Int?
+
+  value String
+}
+
+model Kanji_Reading {
+  id Int @id @default(autoincrement())
+
+  kanji    Kanji @relation(fields: [kanji_id], references: [id])
+  kanji_id Int
+
+  type                  KwKanjiReadingType @relation(fields: [kwKanjiReadingType_id], references: [id])
+  kwKanjiReadingType_id Int
+
+  value String
+}
+
+model Kanji_Meaning {
+  id Int @id @default(autoincrement())
+
+  kanji    Kanji @relation(fields: [kanji_id], references: [id])
+  kanji_id Int
+
+  lang      KwLang @relation(fields: [kwLang_id], references: [id])
+  kwLang_id Int
+
+  value String
+}
+
+model Kanji_Nanori {
+  id Int @id @default(autoincrement())
+
+  kanji    Kanji @relation(fields: [kanji_id], references: [id])
+  kanji_id Int
+
+  value String
+}
+
+//
+// Third level tables
+//
+
+model Kanji_Misc_Variant {
+  id Int @id @default(autoincrement())
+
+  kanji    Kanji @relation(fields: [kanji_id], references: [id])
+  kanji_id Int
+
+  kanjiMisc    Kanji_Misc @relation(fields: [kanjiMisc_id], references: [id])
+  kanjiMisc_id Int
+}
+
+model Kanji_Misc_RadName {
+  id Int @id @default(autoincrement())
+
+  kanjiMisc    Kanji_Misc @relation(fields: [kanjiMisc_id], references: [id])
+  kanjiMisc_id Int
+
+  value String
+}
+
+//
+// Keyword tables
+//
+
+model KwCodepointType {
+  id    Int    @id @default(autoincrement())
+  value String @unique
+
+  kanjiCodepoint Kanji_Codepoint[]
+}
+
+model KwRadicalType {
+  id    Int    @id @default(autoincrement())
+  value String @unique
+
+  kanjiCodepoint Kanji_Radical[]
+}
+
+model KwGrade {
+  id    Int    @id @default(autoincrement())
+  value String @unique
+
+  kanjiMisc Kanji_Misc[]
+}
+
+model KwStrokeCount {
+  id    Int    @id @default(autoincrement())
+  value String @unique
+
+  strokeCount Kanji_Misc[]
+}
+
+model KwJLPT {
+  id    Int    @id @default(autoincrement())
+  value String @unique
+
+  kanjiMisc Kanji_Misc[]
+}
+
+model KwDicRefType {
+  id    Int    @id @default(autoincrement())
+  value String @unique
+
+  kanjiDicRef Kanji_DicRef[]
+}
+
+model KwMorohashiVol {
+  id    Int    @id @default(autoincrement())
+  value String @unique
+
+  kanjiDicRef Kanji_DicRef[]
+}
+
+model KwQueryCodeType {
+  id    Int    @id @default(autoincrement())
+  value String @unique
+
+  kanjiQueryCode Kanji_QueryCode[]
+}
+
+model KwSkipMisclass {
+  id    Int    @id @default(autoincrement())
+  value String @unique
+
+  kanjiQueryCode Kanji_QueryCode[]
+}
+
+model KwKanjiReadingType {
+  id    Int    @id @default(autoincrement())
+  value String @unique
+
+  kanjiReading Kanji_Reading[]
+}
+
+model KwLang {
+  id    Int    @id @default(autoincrement())
+  value String @unique
+
+  kanjiMeaning Kanji_Meaning[]
+}

@@ -3,6 +3,8 @@
 
 ## Preparation
 
+### Parse input files
+
 Download the following files and store them in the `input` directory. 
 
 | File                | Link                                                 |
@@ -14,6 +16,14 @@ Download the following files and store them in the `input` directory.
 
 
 Unzip the `kradzip.zip` file localy and store the files `kradfile`, `kradfile2` and `radkfilex` in the `input` directory
+
+
+
+### Create the postgres database
+
+1. Create a `.env` file in the root directory
+2. Set the `DATABASE_URL` in your `.env` file like `postgresql://test:test@localhost:5432/test?schema=foo`
+
 
 ## Scripts
 

@@ -1,18 +1,24 @@
 {
   "author": "Michael Meister",
   "scripts": {
-    "start": "ts-node src/index.ts",
+    "create": "ts-node src/index.ts",
     "jmdict": "ts-node src/jmdict/toJson.ts",
     "kanjidic2": "ts-node src/kanjidic2/toJson.ts",
     "radkfilex": "ts-node src/radkfilex/toJson.ts",
-    "kradfilex": "ts-node src/kradfilex/toJson.ts"
+    "kradfilex": "ts-node src/kradfilex/toJson.ts",
+    "migrate": "npx prisma migrate dev",
+    "start": "npx ts-node src/script.ts"
   },
   "devDependencies": {
     "@types/encoding-japanese": "^2.0.0",
+    "@types/node": "^18.7.0",
     "@types/xml2js": "^0.4.11",
+    "prisma": "^4.2.1",
+    "ts-node": "^10.9.1",
     "typescript": "^4.7.4"
   },
   "dependencies": {
+    "@prisma/client": "^4.2.1",
     "encoding-japanese": "^2.0.0",
     "xml2js": "^0.4.23"
   }

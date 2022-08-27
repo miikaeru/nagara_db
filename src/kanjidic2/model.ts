@@ -1,7 +1,7 @@
 // Documentation
 // http://www.edrdg.org/kanjidic/kanjidic2_dtdh.html
 
-interface Kanjidic2 {
+export interface Kanjidic2 {
     header: Header;
     character: Character[];
 }
@@ -32,16 +32,20 @@ interface CodepointValue {
 }
 
 interface Radical {
-    rad_value: string;
+    rad_value: RadicalValue | RadicalValue[];
+}
+
+interface RadicalValue {
+    value: string;
     rad_type: string;
 }
 
 interface Misc {
     grade?: string;
     stroke_count: string | string[];
-    variant: Variant | Variant[];
+    variant?: Variant | Variant[];
     freq?: string;
-    rad_name: string | string[];
+    rad_name?: string | string[];
     jlpt?: string;
 }
 
@@ -72,7 +76,7 @@ interface QCode {
 }
 
 interface ReadingMeaning {
-    rmgroup?: RMGroup[];
+    rmgroup?: RMGroup;
     nanori?: string | string[];
 }
 
