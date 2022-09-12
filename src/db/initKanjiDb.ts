@@ -4,19 +4,28 @@ import { join } from 'path';
 import type { Prisma, PrismaClient } from '@prisma/client'
 
 import { Kanjidic2 } from '../kanjidic2/model';
+import { cyan } from 'ansi-colors';
 
-const inputFilePath = join(__dirname, '..', '..', 'output/kanjidic2.json');
-const file = readFileSync(inputFilePath);
+const path = join(__dirname, '..', '..', 'output/kanjidic2.json');
+const file = readFileSync(path);
 const data = JSON.parse(file.toString()) as Kanjidic2;
 
-export async function initFirstLevelDb(prisma: PrismaClient) {
+export async function initKanjiDb(prisma: PrismaClient) {
+    console.log(cyan('Initializing Kanji tables'));
+    await init1Db(prisma);
+    await init2Db(prisma);
+}
 
+async function init1Db(prisma: PrismaClient) {
     await prisma.kanji.createMany({
-        data: data.character.map(v => ({ literal: v.literal }))
+        data: data.character.map(v => ({ literal: v.literal })),
+        skipDuplicates: true
+    }).then(v => {
+        console.log(`Created ${v.count.toString()} kanji entries`)
     });
 }
 
-export async function initSecondLevelDb(prisma: PrismaClient) {
+async function init2Db(prisma: PrismaClient) {
 
     const kwCodepointTypeEntries = await prisma.kwCodepointType.findMany();
     const kwDicRefTypeEntries = await prisma.kwDicRefType.findMany();
@@ -38,6 +47,7 @@ export async function initSecondLevelDb(prisma: PrismaClient) {
     const kanjiQueryCodeData: Prisma.Kanji_QueryCodeCreateManyInput[] = [];
     const kanjiMeaningData: Prisma.Kanji_MeaningCreateManyInput[] = [];
     const kanjiNanoriData: Prisma.Kanji_NanoriCreateManyInput[] = [];
+    const kanjiVariantData: Prisma.Kanji_VariantCreateManyInput[] = [];
 
     data.character.forEach(character => {
 
@@ -173,80 +183,84 @@ export async function initSecondLevelDb(prisma: PrismaClient) {
                 });
             }
 
-        }
-    });
-
-    await prisma.kanji_Codepoint.createMany({
-        data: kanjiCodepointData
-    });
-
-    await prisma.kanji_Misc.createMany({
-        data: kanjiMiscData
-    });
-
-    await prisma.kanji_DicRef.createMany({
-        data: kanjiDicRefData
-    });
-
-    await prisma.kanji_QueryCode.createMany({
-        data: kanjiQueryCodeData
-    });
-
-    await prisma.kanji_Reading.createMany({
-        data: kanjiReadingData
-    });
-
-    await prisma.kanji_Meaning.createMany({
-        data: kanjiMeaningData
-    });
-
-    await prisma.kanji_Nanori.createMany({
-        data: kanjiNanoriData
-    });
-}
-
-export async function initThirdLevelMiscDb(prisma: PrismaClient) {
-
-    const kanjiMiscVariantData: Prisma.Kanji_Misc_VariantCreateManyInput[] = [];
-
-    const kanjiEntries = await prisma.kanji.findMany({
-        include: {
-            misc: true,
-            codepoint: {
-                include: {
-                    type: true
-                }
-            }
-        }
-    });
-
-    data.character.forEach(character => {
-
-        if (character.misc.variant) {
-            const kanji = kanjiEntries.find(a => a.literal === character.literal);
-
-            if (kanji && kanji.misc?.id) {
-
-                const misc_id = kanji.misc.id;
-
+            // Create variant data
+            if (character.misc.variant) {
                 const variants = Array.isArray(character.misc.variant) ? character.misc.variant : [character.misc.variant];
 
-                variants.forEach(variant => {
+                variants.forEach(async variant => {
 
-                    const kanjiVariant = kanjiEntries.find(a => a.codepoint.find(b => b.type.value === variant.var_type && b.value === variant.value));
-
-                    if (kanjiVariant) {
-                        kanjiMiscVariantData.push({
-                            kanjiMisc_id: misc_id,
-                            kanji_id: kanjiVariant.id
+                    const identifiedKanji = data.character.find(a => a.codepoint.cp_value.find(a => a.cp_type === variant.var_type && a.value === variant.value));
+                    if (identifiedKanji) {
+                        const kanjiVariantFromDb = await prisma.kanji.findUnique({
+                            where: {
+                                literal: identifiedKanji.literal
+                            }
                         })
+                        if (kanjiVariantFromDb) {
+                            kanjiVariantData.push({
+                                kanji_id: kanji_id,
+                                kanji_variant_id: kanjiVariantFromDb.id,
+                            })
+                        }
                     }
                 });
             }
         }
     });
 
-    await prisma.kanji_Misc_Variant.createMany({
-        data: kanjiMiscVariantData
+    await prisma.kanji_Codepoint.createMany({
+        data: kanjiCodepointData,
+        skipDuplicates: true
+    }).then(v => {
+        console.log(`Created ${v.count.toString()} codepoint entries`)
+    });
+
+    await prisma.kanji_Misc.createMany({
+        data: kanjiMiscData,
+        skipDuplicates: true
+    }).then(v => {
+        console.log(`Created ${v.count.toString()} misc entries`)
+    });
+
+    await prisma.kanji_DicRef.createMany({
+        data: kanjiDicRefData,
+        skipDuplicates: true
+    }).then(v => {
+        console.log(`Created ${v.count.toString()} dictionary reference entries`)
+    });
+
+    await prisma.kanji_QueryCode.createMany({
+        data: kanjiQueryCodeData,
+        skipDuplicates: true
+    }).then(v => {
+        console.log(`Created ${v.count.toString()} query code entries`)
+    });
+
+    await prisma.kanji_Reading.createMany({
+        data: kanjiReadingData,
+        skipDuplicates: true
+    }).then(v => {
+        console.log(`Created ${v.count.toString()} reading entries`)
+    });
+
+    await prisma.kanji_Meaning.createMany({
+        data: kanjiMeaningData,
+        skipDuplicates: true
+    }).then(v => {
+        console.log(`Created ${v.count.toString()} meaning entries`)
+    });
+
+    await prisma.kanji_Nanori.createMany({
+        data: kanjiNanoriData,
+        skipDuplicates: true
+    }).then(v => {
+        console.log(`Created ${v.count.toString()} nanori entries`)
+    });
+
+    await prisma.kanji_Variant.createMany({
+        data: kanjiVariantData,
+        skipDuplicates: true
+    }).then(v => {
+        console.log(`Created ${v.count.toString()} variant entries`)
     });
 }

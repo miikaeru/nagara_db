@@ -11,170 +11,164 @@ datasource db {
 }
 
 //
-// First level tables
+// Kanji
 //
+
+// 1
 
 model Kanji {
-  id                 Int                  @id @default(autoincrement())
-  literal            String               @unique
-  codepoint          Kanji_Codepoint[]
-  radical            Kanji_Radical[]
-  misc               Kanji_Misc?
-  dic_ref            Kanji_DicRef[]
-  query_code         Kanji_QueryCode[]
-  reading            Kanji_Reading[]
-  meaning            Kanji_Meaning[]
-  nanori             Kanji_Nanori[]
-  kanji_misc_variant Kanji_Misc_Variant[]
+  id             Int               @id @default(autoincrement())
+  literal        String            @unique
+  codepoint      Kanji_Codepoint[]
+  misc           Kanji_Misc?
+  dic_ref        Kanji_DicRef[]
+  query_code     Kanji_QueryCode[]
+  reading        Kanji_Reading[]
+  meaning        Kanji_Meaning[]
+  nanori         Kanji_Nanori[]
+  variant        Kanji_Variant[]   @relation("variant")
+  kanjiToVariant Kanji_Variant[]   @relation("kanjiToVariant")
+
+  @@map("kanji")
 }
 
-model Radical {
-  id Int @id @default(autoincrement())
-
-  variant       Radical[]       @relation("variant")
-  radical       Radical?        @relation(name: "variant", fields: [radical_id], references: [id])
-  radical_id    Int?
-  kanji_radical Kanji_Radical[]
-  sequence      Int
-  literal       String          @unique
-}
-
-//
-// Second level tables
-//
+// 2
 
 model Kanji_Codepoint {
-  id Int @id @default(autoincrement())
-
-  kanji    Kanji @relation(fields: [kanji_id], references: [id])
+  kanji    Kanji @relation(fields: [kanji_id], references: [id], onDelete: Cascade)
   kanji_id Int
 
-  type            KwCodepointType @relation(fields: [kw_codepoint_id], references: [id])
+  type            KwCodepointType @relation(fields: [kw_codepoint_id], references: [id], onDelete: Cascade)
   kw_codepoint_id Int
 
   value String
-}
 
-model Kanji_Radical {
-  id Int @id @default(autoincrement())
-
-  kanji    Kanji @relation(fields: [kanji_id], references: [id])
-  kanji_id Int
-
-  type    KwRadicalType? @relation(fields: [type_id], references: [id])
-  type_id Int?
-
-  value      Radical @relation(fields: [radical_id], references: [id])
-  radical_id Int
+  @@id([kanji_id, kw_codepoint_id])
+  @@map("kanji.codepoint")
 }
 
 model Kanji_Misc {
-  id Int @id @default(autoincrement())
-
-  kanji    Kanji @relation(fields: [kanji_id], references: [id])
+  kanji    Kanji @relation(fields: [kanji_id], references: [id], onDelete: Cascade)
   kanji_id Int   @unique
 
-  grade    KwGrade? @relation(fields: [grade_id], references: [id])
+  grade    KwGrade? @relation(fields: [grade_id], references: [id], onDelete: Cascade)
   grade_id Int?
 
-  strokeCount    KwStrokeCount @relation(fields: [strokeCount_id], references: [id])
+  strokeCount    KwStrokeCount @relation(fields: [strokeCount_id], references: [id], onDelete: Cascade)
   strokeCount_id Int
 
-  jlpt    KwJLPT? @relation(fields: [jlpt_id], references: [id])
+  jlpt    KwJLPT? @relation(fields: [jlpt_id], references: [id], onDelete: Cascade)
   jlpt_id Int?
 
   rad_name Kanji_Misc_RadName[]
 
-  variant Kanji_Misc_Variant[]
-
   freq Int?
+
+  @@id([kanji_id])
+  @@map("kanji.misc")
 }
 
 model Kanji_DicRef {
-  id Int @id @default(autoincrement())
-
-  kanji    Kanji @relation(fields: [kanji_id], references: [id])
+  kanji    Kanji @relation(fields: [kanji_id], references: [id], onDelete: Cascade)
   kanji_id Int
 
-  type            KwDicRefType @relation(fields: [kwDicRefType_id], references: [id])
+  type            KwDicRefType @relation(fields: [kwDicRefType_id], references: [id], onDelete: Cascade)
   kwDicRefType_id Int
 
-  mVol KwMorohashiVol? @relation(fields: [kwMorohashiVol_id], references: [id])
+  mVol KwMorohashiVol? @relation(fields: [kwMorohashiVol_id], references: [id], onDelete: Cascade)
 
   kwMorohashiVol_id Int?
-  mPage             Int?
-  value             String
+
+  mPage Int?
+
+  value String
+
+  @@id([kanji_id, kwDicRefType_id])
+  @@map("kanji.dicref")
 }
 
 model Kanji_QueryCode {
-  id Int @id @default(autoincrement())
-
-  kanji    Kanji @relation(fields: [kanji_id], references: [id])
+  kanji    Kanji @relation(fields: [kanji_id], references: [id], onDelete: Cascade)
   kanji_id Int
 
-  type               KwQueryCodeType @relation(fields: [kwQueryCodeType_id], references: [id])
+  type               KwQueryCodeType @relation(fields: [kwQueryCodeType_id], references: [id], onDelete: Cascade)
   kwQueryCodeType_id Int
 
-  skipMiscalss      KwSkipMisclass? @relation(fields: [kwSkipMisclass_id], references: [id])
+  skipMiscalss      KwSkipMisclass? @relation(fields: [kwSkipMisclass_id], references: [id], onDelete: Cascade)
   kwSkipMisclass_id Int?
 
   value String
+
+  @@id([kanji_id, kwQueryCodeType_id])
+  @@map("kanji.querycode")
 }
 
 model Kanji_Reading {
   id Int @id @default(autoincrement())
 
-  kanji    Kanji @relation(fields: [kanji_id], references: [id])
+  kanji    Kanji @relation(fields: [kanji_id], references: [id], onDelete: Cascade)
   kanji_id Int
 
-  type                  KwKanjiReadingType @relation(fields: [kwKanjiReadingType_id], references: [id])
+  type                  KwKanjiReadingType @relation(fields: [kwKanjiReadingType_id], references: [id], onDelete: Cascade)
   kwKanjiReadingType_id Int
 
   value String
+
+  @@unique([kanji_id, kwKanjiReadingType_id, value])
+  @@map("kanji.reading")
 }
 
 model Kanji_Meaning {
   id Int @id @default(autoincrement())
 
-  kanji    Kanji @relation(fields: [kanji_id], references: [id])
+  kanji    Kanji @relation(fields: [kanji_id], references: [id], onDelete: Cascade)
   kanji_id Int
 
-  lang      KwLang @relation(fields: [kwLang_id], references: [id])
+  lang      KwLang @relation(fields: [kwLang_id], references: [id], onDelete: Cascade)
   kwLang_id Int
 
   value String
+
+  @@unique([kanji_id, kwLang_id, value])
+  @@map("kanji.meaning")
 }
 
 model Kanji_Nanori {
   id Int @id @default(autoincrement())
 
-  kanji    Kanji @relation(fields: [kanji_id], references: [id])
+  kanji    Kanji @relation(fields: [kanji_id], references: [id], onDelete: Cascade)
   kanji_id Int
 
   value String
+
+  @@unique([kanji_id, value])
+  @@map("kanji.nanori")
 }
 
-//
-// Third level tables
-//
-
-model Kanji_Misc_Variant {
+model Kanji_Variant {
   id Int @id @default(autoincrement())
 
-  kanji    Kanji @relation(fields: [kanji_id], references: [id])
+  kanji    Kanji @relation(name: "kanjiToVariant", fields: [kanji_id], references: [id], onDelete: Cascade)
   kanji_id Int
 
-  kanjiMisc    Kanji_Misc @relation(fields: [kanjiMisc_id], references: [id])
-  kanjiMisc_id Int
+  kanji_variant    Kanji @relation(name: "variant", fields: [kanji_variant_id], references: [id])
+  kanji_variant_id Int
+
+  @@unique([kanji_id, kanji_variant_id])
+  @@map("kanji.variant")
 }
+
+// 3
 
 model Kanji_Misc_RadName {
   id Int @id @default(autoincrement())
 
-  kanjiMisc    Kanji_Misc @relation(fields: [kanjiMisc_id], references: [id])
+  kanjiMisc    Kanji_Misc @relation(fields: [kanjiMisc_id], references: [kanji_id], onDelete: Cascade)
   kanjiMisc_id Int
 
-  value String
+  value String @unique
+
+  @@map("kanji.misc.rad")
 }
 
 //
@@ -186,13 +180,15 @@ model KwCodepointType {
   value String @unique
 
   kanjiCodepoint Kanji_Codepoint[]
+
+  @@map("kw.kanji.codepointtype")
 }
 
 model KwRadicalType {
   id    Int    @id @default(autoincrement())
   value String @unique
 
-  kanjiCodepoint Kanji_Radical[]
+  @@map("kw.kanji.radicaltype")
 }
 
 model KwGrade {
@@ -200,6 +196,8 @@ model KwGrade {
   value String @unique
 
   kanjiMisc Kanji_Misc[]
+
+  @@map("kw.kanji.grade")
 }
 
 model KwStrokeCount {
@@ -207,6 +205,8 @@ model KwStrokeCount {
   value String @unique
 
   strokeCount Kanji_Misc[]
+
+  @@map("kw.kanji.strokecount")
 }
 
 model KwJLPT {
@@ -214,6 +214,8 @@ model KwJLPT {
   value String @unique
 
   kanjiMisc Kanji_Misc[]
+
+  @@map("kw.kanji.jlpt")
 }
 
 model KwDicRefType {
@@ -221,6 +223,8 @@ model KwDicRefType {
   value String @unique
 
   kanjiDicRef Kanji_DicRef[]
+
+  @@map("kw.kanji.dicref")
 }
 
 model KwMorohashiVol {
@@ -228,6 +232,8 @@ model KwMorohashiVol {
   value String @unique
 
   kanjiDicRef Kanji_DicRef[]
+
+  @@map("kw.kanji.morohashivol")
 }
 
 model KwQueryCodeType {
@@ -235,6 +241,8 @@ model KwQueryCodeType {
   value String @unique
 
   kanjiQueryCode Kanji_QueryCode[]
+
+  @@map("kw.kanji.querycodetype")
 }
 
 model KwSkipMisclass {
@@ -242,6 +250,8 @@ model KwSkipMisclass {
   value String @unique
 
   kanjiQueryCode Kanji_QueryCode[]
+
+  @@map("kw.kanji.skipmisclass")
 }
 
 model KwKanjiReadingType {
@@ -249,11 +259,15 @@ model KwKanjiReadingType {
   value String @unique
 
   kanjiReading Kanji_Reading[]
+
+  @@map("kw.kanji.readingtype")
 }
 
 model KwLang {
   id    Int    @id @default(autoincrement())
   value String @unique
 
-  kanjiMeaning Kanji_Meaning[]
+  kanji_meaning Kanji_Meaning[]
+
+  @@map("kw.kanji.lang")
 }

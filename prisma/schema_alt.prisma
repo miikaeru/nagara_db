@@ -1,0 +1,528 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+//
+// Kanji
+//
+
+// 1
+
+model Kanji {
+  id                 Int                  @id @default(autoincrement())
+  literal            String               @unique
+  codepoint          Kanji_Codepoint[]
+  radical            Kanji_Radical[]
+  misc               Kanji_Misc?
+  dic_ref            Kanji_DicRef[]
+  query_code         Kanji_QueryCode[]
+  reading            Kanji_Reading[]
+  meaning            Kanji_Meaning[]
+  nanori             Kanji_Nanori[]
+  kanji_misc_variant Kanji_Misc_Variant[]
+
+  @@map("kanji")
+}
+
+// 2
+
+model Kanji_Codepoint {
+  kanji    Kanji @relation(fields: [kanji_id], references: [id], onDelete: Cascade)
+  kanji_id Int
+
+  type            KwCodepointType @relation(fields: [kw_codepoint_id], references: [id], onDelete: Cascade)
+  kw_codepoint_id Int
+
+  value String
+
+  @@id([kanji_id, kw_codepoint_id])
+  @@map("kanji.codepoint")
+}
+
+model Kanji_Radical {
+  kanji    Kanji @relation(fields: [kanji_id], references: [id], onDelete: Cascade)
+  kanji_id Int
+
+  type    KwRadicalType? @relation(fields: [type_id], references: [id], onDelete: Cascade)
+  type_id Int?
+
+  value      Radical @relation(fields: [radical_id], references: [id], onDelete: Cascade)
+  radical_id Int
+
+  @@id([kanji_id, radical_id])
+  @@map("kanji.radical")
+}
+
+model Kanji_Misc {
+  kanji    Kanji @relation(fields: [kanji_id], references: [id], onDelete: Cascade)
+  kanji_id Int   @unique
+
+  grade    KwGrade? @relation(fields: [grade_id], references: [id], onDelete: Cascade)
+  grade_id Int?
+
+  strokeCount    KwStrokeCount @relation(fields: [strokeCount_id], references: [id], onDelete: Cascade)
+  strokeCount_id Int
+
+  jlpt    KwJLPT? @relation(fields: [jlpt_id], references: [id], onDelete: Cascade)
+  jlpt_id Int?
+
+  rad_name Kanji_Misc_RadName[]
+
+  variant Kanji_Misc_Variant[]
+
+  freq Int?
+
+  @@id([kanji_id])
+  @@map("kanji.misc")
+}
+
+model Kanji_DicRef {
+  kanji    Kanji @relation(fields: [kanji_id], references: [id], onDelete: Cascade)
+  kanji_id Int
+
+  type            KwDicRefType @relation(fields: [kwDicRefType_id], references: [id], onDelete: Cascade)
+  kwDicRefType_id Int
+
+  mVol KwMorohashiVol? @relation(fields: [kwMorohashiVol_id], references: [id], onDelete: Cascade)
+
+  kwMorohashiVol_id Int?
+
+  mPage Int?
+
+  value String
+
+  @@id([kanji_id, kwDicRefType_id])
+  @@map("kanji.dicref")
+}
+
+model Kanji_QueryCode {
+  kanji    Kanji @relation(fields: [kanji_id], references: [id], onDelete: Cascade)
+  kanji_id Int
+
+  type               KwQueryCodeType @relation(fields: [kwQueryCodeType_id], references: [id], onDelete: Cascade)
+  kwQueryCodeType_id Int
+
+  skipMiscalss      KwSkipMisclass? @relation(fields: [kwSkipMisclass_id], references: [id], onDelete: Cascade)
+  kwSkipMisclass_id Int?
+
+  value String
+
+  @@id([kanji_id, kwQueryCodeType_id])
+  @@map("kanji.querycode")
+}
+
+model Kanji_Reading {
+  id Int @id @default(autoincrement())
+
+  kanji    Kanji @relation(fields: [kanji_id], references: [id], onDelete: Cascade)
+  kanji_id Int
+
+  type                  KwKanjiReadingType @relation(fields: [kwKanjiReadingType_id], references: [id], onDelete: Cascade)
+  kwKanjiReadingType_id Int
+
+  value String
+
+  @@unique([kanji_id, kwKanjiReadingType_id, value])
+  @@map("kanji.reading")
+}
+
+model Kanji_Meaning {
+  id Int @id @default(autoincrement())
+
+  kanji    Kanji @relation(fields: [kanji_id], references: [id], onDelete: Cascade)
+  kanji_id Int
+
+  lang      KwLang @relation(fields: [kwLang_id], references: [id], onDelete: Cascade)
+  kwLang_id Int
+
+  value String
+
+  @@unique([kanji_id, kwLang_id, value])
+  @@map("kanji.meaning")
+}
+
+model Kanji_Nanori {
+  id Int @id @default(autoincrement())
+
+  kanji    Kanji @relation(fields: [kanji_id], references: [id], onDelete: Cascade)
+  kanji_id Int
+
+  value String
+
+  @@unique([kanji_id, value])
+  @@map("kanji.nanori")
+}
+
+// 3
+
+model Kanji_Misc_Variant {
+  id Int @id @default(autoincrement())
+
+  kanji    Kanji @relation(fields: [kanji_id], references: [id], onDelete: Cascade)
+  kanji_id Int
+
+  kanjiMisc    Kanji_Misc @relation(fields: [kanjiMisc_id], references: [kanji_id], onDelete: Cascade)
+  kanjiMisc_id Int
+}
+
+model Kanji_Misc_RadName {
+  id Int @id @default(autoincrement())
+
+  kanjiMisc    Kanji_Misc @relation(fields: [kanjiMisc_id], references: [kanji_id], onDelete: Cascade)
+  kanjiMisc_id Int
+
+  value String @unique
+}
+
+//
+// Radical
+//
+
+// 1
+
+model Radical {
+  id Int @id @default(autoincrement())
+
+  variant       Radical[]       @relation("variant")
+  radical       Radical?        @relation(name: "variant", fields: [radical_id], references: [id])
+  radical_id    Int?
+  kanji_radical Kanji_Radical[]
+  sequence      Int
+  literal       String          @unique
+}
+
+//
+// Word
+//
+
+// 1
+
+model Word {
+  id       Int    @id @default(autoincrement())
+  sequence String @unique
+
+  kanjiEl Word_KanjiEl[]
+
+  readingEl Word_ReadingEl[]
+
+  sense Word_Sense[]
+}
+
+// 2
+
+model Word_KanjiEl {
+  id Int @id @default(autoincrement())
+
+  word    Word @relation(fields: [word_id], references: [id], onDelete: Cascade)
+  word_id Int
+
+  info KwWordKanjiInfo[]
+
+  prio KwWordPrio[]
+
+  restrReadingKanji RestrReadingKanji[]
+
+  word_sense_antonym Word_Sense_Antonym[]
+
+  word_sense_xref Word_Sense_XRef[]
+
+  restrSenseKanji RestrSenseKanji[]
+
+  value String
+}
+
+model Word_ReadingEl {
+  id Int @id @default(autoincrement())
+
+  word    Word @relation(fields: [word_id], references: [id], onDelete: Cascade)
+  word_id Int
+
+  nokanji Boolean
+
+  restrReadingKanji RestrReadingKanji[]
+
+  info KwWordReadingInfo[]
+
+  prio KwWordPrio[]
+
+  word_sense_antonym Word_Sense_Antonym[]
+
+  word_sense_xref Word_Sense_XRef[]
+
+  restrSenseReading RestrSenseReading[]
+
+  value String
+}
+
+model Word_Sense {
+  id Int @id @default(autoincrement())
+
+  word    Word @relation(fields: [word_id], references: [id], onDelete: Cascade)
+  word_id Int
+
+  position KwWordPos[]
+
+  field KwWordField[]
+
+  misc KwWordMisc[]
+
+  dial KwDial[]
+
+  lsource Word_Sense_Source[]
+
+  ant Word_Sense_Antonym[]
+
+  xref Word_Sense_XRef[]
+
+  restrSenseKanji RestrSenseKanji[]
+
+  restrSenseReading RestrSenseReading[]
+
+  gloss Word_Sense_Gloss[]
+
+  info String?
+}
+
+// 3
+
+model Word_Sense_Source {
+  id Int @id @default(autoincrement())
+
+  sense         Word_Sense @relation(fields: [word_sense_id], references: [id], onDelete: Cascade)
+  word_sense_id Int
+
+  lang      KwLang @relation(fields: [kwLang_id], references: [id], onDelete: Cascade)
+  kwLang_id Int
+
+  part Boolean
+
+  wasei Boolean
+
+  value String
+}
+
+model Word_Sense_Gloss {
+  id Int @id @default(autoincrement())
+
+  sense         Word_Sense @relation(fields: [word_sense_id], references: [id], onDelete: Cascade)
+  word_sense_id Int
+
+  lang    KwLang @relation(fields: [lang_id], references: [id], onDelete: Cascade)
+  lang_id Int
+
+  type    KwGlossType? @relation(fields: [type_id], references: [id], onDelete: Cascade)
+  type_id Int?
+
+  value String
+}
+
+model Word_Sense_Antonym {
+  id Int @id @default(autoincrement())
+
+  sense         Word_Sense @relation(fields: [word_sense_id], references: [id], onDelete: Cascade)
+  word_sense_id Int
+
+  readingEl    Word_ReadingEl? @relation(fields: [readingEl_id], references: [id], onDelete: Cascade)
+  readingEl_id Int?
+
+  kanjiEl    Word_KanjiEl? @relation(fields: [kanjiEl_id], references: [id], onDelete: Cascade)
+  kanjiEl_id Int?
+}
+
+model Word_Sense_XRef {
+  id Int @id @default(autoincrement())
+
+  sense         Word_Sense @relation(fields: [word_sense_id], references: [id], onDelete: Cascade)
+  word_sense_id Int
+
+  readingEl    Word_ReadingEl? @relation(fields: [readingEl_id], references: [id], onDelete: Cascade)
+  readingEl_id Int?
+
+  kanjiEl    Word_KanjiEl? @relation(fields: [kanjiEl_id], references: [id], onDelete: Cascade)
+  kanjiEl_id Int?
+}
+
+//
+// Keyword tables
+//
+
+model KwCodepointType {
+  id    Int    @id @default(autoincrement())
+  value String @unique
+
+  kanjiCodepoint Kanji_Codepoint[]
+}
+
+model KwRadicalType {
+  id    Int    @id @default(autoincrement())
+  value String @unique
+
+  kanjiCodepoint Kanji_Radical[]
+}
+
+model KwGrade {
+  id    Int    @id @default(autoincrement())
+  value String @unique
+
+  kanjiMisc Kanji_Misc[]
+}
+
+model KwStrokeCount {
+  id    Int    @id @default(autoincrement())
+  value String @unique
+
+  strokeCount Kanji_Misc[]
+}
+
+model KwJLPT {
+  id    Int    @id @default(autoincrement())
+  value String @unique
+
+  kanjiMisc Kanji_Misc[]
+}
+
+model KwDicRefType {
+  id    Int    @id @default(autoincrement())
+  value String @unique
+
+  kanjiDicRef Kanji_DicRef[]
+}
+
+model KwMorohashiVol {
+  id    Int    @id @default(autoincrement())
+  value String @unique
+
+  kanjiDicRef Kanji_DicRef[]
+}
+
+model KwQueryCodeType {
+  id    Int    @id @default(autoincrement())
+  value String @unique
+
+  kanjiQueryCode Kanji_QueryCode[]
+}
+
+model KwSkipMisclass {
+  id    Int    @id @default(autoincrement())
+  value String @unique
+
+  kanjiQueryCode Kanji_QueryCode[]
+}
+
+model KwKanjiReadingType {
+  id    Int    @id @default(autoincrement())
+  value String @unique
+
+  kanjiReading Kanji_Reading[]
+}
+
+model KwLang {
+  id    Int    @id @default(autoincrement())
+  value String @unique
+
+  kanji_meaning Kanji_Meaning[]
+
+  word_sense_source Word_Sense_Source[]
+
+  word_sense_gloss Word_Sense_Gloss[]
+}
+
+model KwWordPrio {
+  id    Int    @id @default(autoincrement())
+  value String @unique
+
+  kanjiEl Word_KanjiEl[]
+
+  readingEl Word_ReadingEl[]
+}
+
+model KwWordKanjiInfo {
+  id    Int    @id @default(autoincrement())
+  value String @unique
+
+  kanjiEl Word_KanjiEl[]
+}
+
+model KwWordReadingInfo {
+  id    Int    @id @default(autoincrement())
+  value String @unique
+
+  readingEl Word_ReadingEl[]
+}
+
+model KwWordPos {
+  id    Int    @id @default(autoincrement())
+  value String @unique
+
+  sense Word_Sense[]
+}
+
+model KwWordField {
+  id    Int    @id @default(autoincrement())
+  value String @unique
+
+  sense Word_Sense[]
+}
+
+model KwWordMisc {
+  id    Int    @id @default(autoincrement())
+  value String @unique
+
+  sense Word_Sense[]
+}
+
+model KwDial {
+  id    Int    @id @default(autoincrement())
+  value String @unique
+
+  sense Word_Sense[]
+}
+
+model KwGlossType {
+  id    Int    @id @default(autoincrement())
+  value String @unique
+
+  gloss Word_Sense_Gloss[]
+}
+
+//
+// Restriction tables 
+//
+
+model RestrReadingKanji {
+  id Int @id @default(autoincrement())
+
+  readingEl    Word_ReadingEl @relation(fields: [readingEl_id], references: [id], onDelete: Cascade)
+  readingEl_id Int
+
+  kanjiEl    Word_KanjiEl @relation(fields: [kanjiEl_id], references: [id], onDelete: Cascade)
+  kanjiEl_id Int
+}
+
+model RestrSenseKanji {
+  id Int @id @default(autoincrement())
+
+  sense    Word_Sense @relation(fields: [sense_id], references: [id], onDelete: Cascade)
+  sense_id Int
+
+  kanji    Word_KanjiEl @relation(fields: [kanji_id], references: [id], onDelete: Cascade)
+  kanji_id Int
+}
+
+model RestrSenseReading {
+  id Int @id @default(autoincrement())
+
+  sense    Word_Sense @relation(fields: [sense_id], references: [id], onDelete: Cascade)
+  sense_id Int
+
+  reading    Word_ReadingEl @relation(fields: [reading_id], references: [id], onDelete: Cascade)
+  reading_id Int
+}

@@ -1,15 +1,15 @@
 // Documentation
 // https://www.edrdg.org/jmdict/jmdict_dtd_h.html
 
-interface JMDict {
+export interface JMDict {
     entry: Entr[];
 }
 
 interface Entr {
     ent_seq: string;
-    k_ele?: Kanji;
-    r_ele: Rdng;
-    sense: Sens;
+    k_ele?: Kanji | Kanji[];
+    r_ele: Rdng | Rdng[];
+    sense: Sens | Sens[];
 }
 
 interface Kanji {
@@ -29,12 +29,14 @@ interface Rdng {
 interface Sens {
     stagk?: string | string[];
     stagr?: string | string[];
+    ant?: string | string[];
+    xref?: string | string[];
     pos?: string | string[];
     field?: string | string[];
     misc?: string | string[];
     lsource?: LSrc | LSrc[];
     dial?: string | string[];
-    gloss?: string | GlossWithType | GlossNotEng | Array<string | GlossWithType | GlossNotEng>;
+    gloss?: string | Gloss | Array<string | Gloss>;
     s_inf?: string;
 }
 
@@ -45,12 +47,8 @@ interface LSrc {
     ls_wasei?: string;
 }
 
-interface GlossNotEng {
+interface Gloss {
     value: string;
-    lang: string;
-}
-
-interface GlossWithType {
-    value: string;
-    g_type: string;
+    lang?: string;
+    g_type?: string;
 }

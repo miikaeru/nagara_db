@@ -4,12 +4,19 @@ import { join } from 'path';
 import type { PrismaClient } from '@prisma/client'
 
 import { Kanjidic2 } from '../kanjidic2/model';
+import { JMDict } from '../jmdict/model';
+import { cyan } from 'ansi-colors';
 
-const inputFilePath = join(__dirname, '..', '..', 'output/kanjidic2.json');
-const file = readFileSync(inputFilePath);
-const kanjidic2data = JSON.parse(file.toString()) as Kanjidic2;
+const kanjidic2Path = join(__dirname, '..', '..', 'output/kanjidic2.json');
+const kanjidic2File = readFileSync(kanjidic2Path);
+const kanjidic2Data = JSON.parse(kanjidic2File.toString()) as Kanjidic2;
 
-export async function initKanjiKwDb(prisma: PrismaClient) {
+const jmdictPath = join(__dirname, '..', '..', 'output/jmdict.json');
+const jmdictFile = readFileSync(jmdictPath);
+const jmdictData = JSON.parse(jmdictFile.toString()) as JMDict;
+
+export async function initKwDb(prisma: PrismaClient) {
+    console.log(cyan('Initializing Keyword tables'));
 
     // Boiler plate for unique keyword values
     const codepointTypes: string[] = [];
@@ -24,8 +31,20 @@ export async function initKanjiKwDb(prisma: PrismaClient) {
     const radicalTypes: string[] = [];
     const strokeCounts: string[] = [];
 
+    /*
+    const wordPrios: string[] = [];
+    const wordKanjiInfos: string[] = [];
+    const wordReadingInfos: string[] = [];
+    const wordPositions: string[] = [];
+    const wordFields: string[] = [];
+    const wordMisc: string[] = [];
+    const wordDialects: string[] = [];
+    const glossTypes: string[] = [];
+    */
+
+
     // Loop through kanjidic2 characters
-    kanjidic2data.character.forEach(async char => {
+    kanjidic2Data.character.forEach(async char => {
 
         // Get unique codepoint type values
         char.codepoint.cp_value.forEach(cp_value => {
@@ -88,50 +107,245 @@ export async function initKanjiKwDb(prisma: PrismaClient) {
         });
     });
 
+    // Loop through JMDict entries
+    /*
+    jmdictData.entry.forEach(entry => {
+
+        if (entry.k_ele) {
+            const kanjiElArr = Array.isArray(entry.k_ele) ? entry.k_ele : [entry.k_ele];
+
+            kanjiElArr.forEach(kanjiEl => {
+
+                // Get unique word priority keywords from kanji element
+                if (kanjiEl.ke_pri) {
+                    const kanjiElPrioArr = Array.isArray(kanjiEl.ke_pri) ? kanjiEl.ke_pri : [kanjiEl.ke_pri];
+
+                    kanjiElPrioArr.forEach(kanjiElPrio => {
+                        if (!wordPrios.includes(kanjiElPrio)) wordPrios.push(kanjiElPrio);
+                    });
+                }
+
+                // Get unique kanji info keywords from kanji element
+                if (kanjiEl.ke_inf) {
+                    const kanjiElInfArr = Array.isArray(kanjiEl.ke_inf) ? kanjiEl.ke_inf : [kanjiEl.ke_inf];
+
+                    kanjiElInfArr.forEach(kanjiElInf => {
+                        if (!wordKanjiInfos.includes(kanjiElInf)) wordKanjiInfos.push(kanjiElInf);
+                    });
+                }
+            });
+        }
+
+        const readingElArr = Array.isArray(entry.r_ele) ? entry.r_ele : [entry.r_ele];
+        readingElArr.forEach(readingEl => {
+
+            // Get unique word priority keywords from reading element
+            if (readingEl.re_pri) {
+                const readingElPrioArr = Array.isArray(readingEl.re_pri) ? readingEl.re_pri : [readingEl.re_pri];
+
+                readingElPrioArr.forEach(readingElPrio => {
+                    if (!wordPrios.includes(readingElPrio)) wordPrios.push(readingElPrio)
+                });
+            }
+
+            // Get unique reading info keywords from reading element
+            if (readingEl.re_inf) {
+                const readingElInfArr = Array.isArray(readingEl.re_inf) ? readingEl.re_inf : [readingEl.re_inf];
+
+                readingElInfArr.forEach(readingElInf => {
+                    if (!wordReadingInfos.includes(readingElInf)) wordReadingInfos.push(readingElInf);
+                });
+            }
+        });
+
+        const senseArr = Array.isArray(entry.sense) ? entry.sense : [entry.sense];
+
+        senseArr.forEach(sense => {
+
+            // Get unique sense position keywords from sense element
+            if (sense.pos) {
+                const sensePosArr = Array.isArray(sense.pos) ? sense.pos : [sense.pos];
+
+                sensePosArr.forEach(sensePos => {
+                    if (!wordPositions.includes(sensePos)) wordPositions.push(sensePos);
+                })
+            }
+
+            // Get unique sense field keywords from sense element
+            if (sense.field) {
+                const senseFieldArr = Array.isArray(sense.field) ? sense.field : [sense.field];
+
+                senseFieldArr.forEach(senseField => {
+                    if (!wordFields.includes(senseField)) wordFields.push(senseField);
+                })
+            }
+
+            // Get unique sense misc keywords from sense element
+            if (sense.misc) {
+                const senseMiscArr = Array.isArray(sense.misc) ? sense.misc : [sense.misc];
+
+                senseMiscArr.forEach(senseMisc => {
+                    if (!wordMisc.includes(senseMisc)) wordMisc.push(senseMisc);
+                })
+            }
+
+            // Get unique sense dialect keywords from sense element
+            if (sense.dial) {
+                const senseDialArr = Array.isArray(sense.dial) ? sense.dial : [sense.dial];
+
+                senseDialArr.forEach(senseDial => {
+                    if (!wordDialects.includes(senseDial)) wordDialects.push(senseDial);
+                })
+            }
+
+            // Get unique sense gloss and language keywords from gloss element
+            if (sense.gloss) {
+                const senseGlossArr = Array.isArray(sense.gloss) ? sense.gloss : [sense.gloss];
+
+                senseGlossArr.forEach(senseGloss => {
+                    if (typeof senseGloss !== "string") {
+                        if (senseGloss.g_type && !glossTypes.includes(senseGloss.g_type)) glossTypes.push(senseGloss.g_type);
+                        if (senseGloss.lang && !languages.includes(senseGloss.lang)) languages.push(senseGloss.lang);
+                    }
+                });
+            }
+        });
+    });
+    */
 
     // Create all entries
-
     await prisma.kwCodepointType.createMany({
-        data: codepointTypes.map(v => ({ value: v }))
+        data: codepointTypes.map(v => ({ value: v })),
+        skipDuplicates: true
+    }).then(v => {
+        console.log(`Created ${v.count.toString()} codepoint type entries`)
     });
 
     await prisma.kwDicRefType.createMany({
-        data: dicRefTypes.map(v => ({ value: v }))
+        data: dicRefTypes.map(v => ({ value: v })),
+        skipDuplicates: true
+    }).then(v => {
+        console.log(`Created ${v.count.toString()} dictionary reference type entries`)
     });
 
     await prisma.kwGrade.createMany({
-        data: grades.map(v => ({ value: v }))
+        data: grades.map(v => ({ value: v })),
+        skipDuplicates: true
+    }).then(v => {
+        console.log(`Created ${v.count.toString()} grade entries`)
     });
 
     await prisma.kwJLPT.createMany({
-        data: jlptLevels.map(v => ({ value: v }))
+        data: jlptLevels.map(v => ({ value: v })),
+        skipDuplicates: true
+    }).then(v => {
+        console.log(`Created ${v.count.toString()} JLPT entries`)
     });
 
     await prisma.kwKanjiReadingType.createMany({
-        data: kanjiReadingTypes.map(v => ({ value: v }))
+        data: kanjiReadingTypes.map(v => ({ value: v })),
+        skipDuplicates: true
+    }).then(v => {
+        console.log(`Created ${v.count.toString()} reading type entries`)
     });
 
     await prisma.kwLang.createMany({
-        data: languages.map(v => ({ value: v }))
+        data: languages.map(v => ({ value: v })),
+        skipDuplicates: true
+    }).then(v => {
+        console.log(`Created ${v.count.toString()} language entries`)
     });
 
     await prisma.kwMorohashiVol.createMany({
-        data: morohashiVolumes.map(v => ({ value: v }))
+        data: morohashiVolumes.map(v => ({ value: v })),
+        skipDuplicates: true
+    }).then(v => {
+        console.log(`Created ${v.count.toString()} morohashi volume entries`)
     });
 
     await prisma.kwQueryCodeType.createMany({
-        data: queryCodeTypes.map(v => ({ value: v }))
+        data: queryCodeTypes.map(v => ({ value: v })),
+        skipDuplicates: true
+    }).then(v => {
+        console.log(`Created ${v.count.toString()} query code type entries`)
     });
 
     await prisma.kwRadicalType.createMany({
-        data: radicalTypes.map(v => ({ value: v }))
+        data: radicalTypes.map(v => ({ value: v })),
+        skipDuplicates: true
+    }).then(v => {
+        console.log(`Created ${v.count.toString()} radical type entries`)
     });
 
     await prisma.kwSkipMisclass.createMany({
-        data: misclassifications.map(v => ({ value: v }))
+        data: misclassifications.map(v => ({ value: v })),
+        skipDuplicates: true
+    }).then(v => {
+        console.log(`Created ${v.count.toString()} mis classification entries`)
     });
 
     await prisma.kwStrokeCount.createMany({
-        data: strokeCounts.map(v => ({ value: v }))
+        data: strokeCounts.map(v => ({ value: v })),
+        skipDuplicates: true
+    }).then(v => {
+        console.log(`Created ${v.count.toString()} stroke count entries`)
     });
+
+    /*
+    await prisma.kwWordPrio.createMany({
+        data: wordPrios.map(v => ({ value: v })),
+        skipDuplicates: true
+    }).then(v => {
+        console.log(`Created ${v.count.toString()} word priority entries`)
+    });
+
+    await prisma.kwWordKanjiInfo.createMany({
+        data: wordKanjiInfos.map(v => ({ value: v })),
+        skipDuplicates: true
+    }).then(v => {
+        console.log(`Created ${v.count.toString()} kanji info entries`)
+    });
+
+    await prisma.kwWordReadingInfo.createMany({
+        data: wordReadingInfos.map(v => ({ value: v })),
+        skipDuplicates: true
+    }).then(v => {
+        console.log(`Created ${v.count.toString()} rading info entries`)
+    });
+
+    await prisma.kwWordPos.createMany({
+        data: wordPositions.map(v => ({ value: v })),
+        skipDuplicates: true
+    }).then(v => {
+        console.log(`Created ${v.count.toString()} word position entries`)
+    });
+
+    await prisma.kwWordField.createMany({
+        data: wordFields.map(v => ({ value: v })),
+        skipDuplicates: true
+    }).then(v => {
+        console.log(`Created ${v.count.toString()} word field entries`)
+    });
+
+    await prisma.kwWordMisc.createMany({
+        data: wordMisc.map(v => ({ value: v })),
+        skipDuplicates: true
+    }).then(v => {
+        console.log(`Created ${v.count.toString()} word misc entries`)
+    });
+
+    await prisma.kwDial.createMany({
+        data: wordDialects.map(v => ({ value: v })),
+        skipDuplicates: true
+    }).then(v => {
+        console.log(`Created ${v.count.toString()} dialect entries`)
+    });
+
+    await prisma.kwGlossType.createMany({
+        data: glossTypes.map(v => ({ value: v })),
+        skipDuplicates: true
+    }).then(v => {
+        console.log(`Created ${v.count.toString()} gloss type entries`)
+    });
+    */
 }

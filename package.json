@@ -7,9 +7,11 @@
     "radkfilex": "ts-node src/radkfilex/toJson.ts",
     "kradfilex": "ts-node src/kradfilex/toJson.ts",
     "migrate": "npx prisma migrate dev",
+    "push": "npx prisma db push",
     "start": "npx ts-node src/script.ts"
   },
   "devDependencies": {
+    "@types/cli-progress": "^3.11.0",
     "@types/encoding-japanese": "^2.0.0",
     "@types/node": "^18.7.0",
     "@types/xml2js": "^0.4.11",
@@ -19,6 +21,8 @@
   },
   "dependencies": {
     "@prisma/client": "^4.2.1",
+    "ansi-colors": "^4.1.3",
+    "cli-progress": "^3.11.2",
     "encoding-japanese": "^2.0.0",
     "xml2js": "^0.4.23"
   }

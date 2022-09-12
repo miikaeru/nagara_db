@@ -1,18 +1,41 @@
 import { PrismaClient } from '@prisma/client';
 
-import { deleteAllEntries } from './db/deleteDb';
-import { initKanjiKwDb } from './db/initKwDb';
-import { initFirstLevelDb, initSecondLevelDb, initThirdLevelMiscDb } from './db/initDb';
+import { initKwDb } from './db/initKwDb';
+import { initKanjiDb } from './db/initKanjiDb';
+import { green } from 'ansi-colors';
 
 const prisma = new PrismaClient()
 
 async function main() {
 
-    await deleteAllEntries(prisma);
-    await initKanjiKwDb(prisma);
-    await initFirstLevelDb(prisma);
-    await initSecondLevelDb(prisma);
-    await initThirdLevelMiscDb(prisma);
+    await initKwDb(prisma);
+    await initKanjiDb(prisma);
+
+    console.log(green('Finished'))
+
+    const asdf = await prisma.kanji.findUnique({
+        where: {
+            literal: "愛",
+        },
+        include: {
+            codepoint: true,
+            dic_ref: true,
+            meaning: true,
+            misc: {
+                include: {
+                    grade: true,
+                    jlpt: true,
+                    rad_name: true,
+                    strokeCount: true,
+                }
+            },
+            nanori: true,
+            query_code: true,
+            reading: true,
+            variant: true
+        }
+    });
+    console.log(asdf);
 }
 
 main()
