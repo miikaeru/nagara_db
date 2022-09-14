@@ -17,17 +17,27 @@ datasource db {
 // 1
 
 model Kanji {
-  id             Int               @id @default(autoincrement())
-  literal        String            @unique
-  codepoint      Kanji_Codepoint[]
-  misc           Kanji_Misc?
-  dic_ref        Kanji_DicRef[]
-  query_code     Kanji_QueryCode[]
-  reading        Kanji_Reading[]
-  meaning        Kanji_Meaning[]
-  nanori         Kanji_Nanori[]
-  variant        Kanji_Variant[]   @relation("variant")
-  kanjiToVariant Kanji_Variant[]   @relation("kanjiToVariant")
+  id         Int               @id @default(autoincrement())
+  literal    String            @unique
+  codepoint  Kanji_Codepoint[]
+  misc       Kanji_Misc?
+  dic_ref    Kanji_DicRef[]
+  query_code Kanji_QueryCode[]
+  reading    Kanji_Reading[]
+  meaning    Kanji_Meaning[]
+  nanori     Kanji_Nanori[]
+
+  variant        Kanji_Variant[] @relation("variant")
+  kanjiToVariant Kanji_Variant[] @relation("kanjiToVariant")
+
+  lookalike        Kanji_Lookalike[] @relation("lookalike")
+  kanjiToLookalike Kanji_Lookalike[] @relation("kanjiToLookalike")
+
+  antonym        Kanji_Antonym[] @relation("antonym")
+  kanjiToAntonym Kanji_Antonym[] @relation("kanjiToAntonym")
+
+  synonym        Kanji_Synonym[] @relation("synonym")
+  kanjiToSynonym Kanji_Synonym[] @relation("kanjiToSynonym")
 
   @@map("kanji")
 }
@@ -146,16 +156,49 @@ model Kanji_Nanori {
 }
 
 model Kanji_Variant {
-  id Int @id @default(autoincrement())
-
   kanji    Kanji @relation(name: "kanjiToVariant", fields: [kanji_id], references: [id], onDelete: Cascade)
   kanji_id Int
 
   kanji_variant    Kanji @relation(name: "variant", fields: [kanji_variant_id], references: [id])
   kanji_variant_id Int
 
-  @@unique([kanji_id, kanji_variant_id])
+  @@id([kanji_id, kanji_variant_id])
   @@map("kanji.variant")
+}
+
+model Kanji_Lookalike {
+  kanji    Kanji @relation(name: "kanjiToLookalike", fields: [kanji_id], references: [id], onDelete: Cascade)
+  kanji_id Int
+
+  kanji_lookalike    Kanji @relation(name: "lookalike", fields: [kanji_lookalike_id], references: [id])
+  kanji_lookalike_id Int
+
+  @@id([kanji_id, kanji_lookalike_id])
+  @@map("kanji.lookalike")
+}
+
+model Kanji_Antonym {
+  kanji    Kanji @relation(name: "kanjiToAntonym", fields: [kanji_id], references: [id], onDelete: Cascade)
+  kanji_id Int
+
+  kanji_antonym    Kanji @relation(name: "antonym", fields: [kanji_antonym_id], references: [id])
+  kanji_antonym_id Int
+
+  @@id([kanji_id, kanji_antonym_id])
+  @@map("kanji.antonym")
+}
+
+model Kanji_Synonym {
+  id Int @id @default(autoincrement())
+
+  kanji    Kanji @relation(name: "kanjiToSynonym", fields: [kanji_id], references: [id], onDelete: Cascade)
+  kanji_id Int
+
+  kanji_synonym    Kanji @relation(name: "synonym", fields: [kanji_synonym_id], references: [id])
+  kanji_synonym_id Int
+
+  @@unique([kanji_id, kanji_synonym_id])
+  @@map("kanji.synonym")
 }
 
 // 3

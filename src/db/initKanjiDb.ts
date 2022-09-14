@@ -2,13 +2,26 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 
 import type { Prisma, PrismaClient } from '@prisma/client'
-
-import { Kanjidic2 } from '../kanjidic2/model';
 import { cyan } from 'ansi-colors';
 
-const path = join(__dirname, '..', '..', 'output/kanjidic2.json');
-const file = readFileSync(path);
-const data = JSON.parse(file.toString()) as Kanjidic2;
+import { Kanjidic2 } from '../kanjidic2/model';
+import { Antonym, Lookalike, Synonym } from '../kanjium/model';
+
+const kanjidic2Path = join(__dirname, '..', '..', 'output/kanjidic2.json');
+const kanjidic2File = readFileSync(kanjidic2Path);
+const kanjidic2Data = JSON.parse(kanjidic2File.toString()) as Kanjidic2;
+
+const antonymsPath = join(__dirname, '..', '..', 'input/antonyms.json');
+const antonymsFile = readFileSync(antonymsPath);
+const antonymsData = JSON.parse(antonymsFile.toString()) as Antonym[];
+
+const lookalikesPath = join(__dirname, '..', '..', 'input/lookalikes.json');
+const lookalikesFile = readFileSync(lookalikesPath);
+const lookalikesData = JSON.parse(lookalikesFile.toString()) as Lookalike[];
+
+const synonymsPath = join(__dirname, '..', '..', 'input/synonyms.json');
+const synonymsFile = readFileSync(synonymsPath);
+const synonymsData = JSON.parse(synonymsFile.toString()) as Synonym[];
 
 export async function initKanjiDb(prisma: PrismaClient) {
     console.log(cyan('Initializing Kanji tables'));
@@ -18,7 +31,7 @@ export async function initKanjiDb(prisma: PrismaClient) {
 
 async function init1Db(prisma: PrismaClient) {
     await prisma.kanji.createMany({
-        data: data.character.map(v => ({ literal: v.literal })),
+        data: kanjidic2Data.character.map(v => ({ literal: v.literal })),
         skipDuplicates: true
     }).then(v => {
         console.log(`Created ${v.count.toString()} kanji entries`)
@@ -48,8 +61,11 @@ async function init2Db(prisma: PrismaClient) {
     const kanjiMeaningData: Prisma.Kanji_MeaningCreateManyInput[] = [];
     const kanjiNanoriData: Prisma.Kanji_NanoriCreateManyInput[] = [];
     const kanjiVariantData: Prisma.Kanji_VariantCreateManyInput[] = [];
+    const kanjiAntonymData: Prisma.Kanji_AntonymCreateManyInput[] = [];
+    const kanjiLookalikeData: Prisma.Kanji_LookalikeCreateManyInput[] = [];
+    const kanjiSynonymData: Prisma.Kanji_SynonymCreateManyInput[] = [];
 
-    data.character.forEach(character => {
+    for (const character of kanjidic2Data.character) {
 
         const kanji_id = kanji.find(a => a.literal === character.literal)?.id;
 
@@ -189,7 +205,7 @@ async function init2Db(prisma: PrismaClient) {
 
                 variants.forEach(async variant => {
 
-                    const identifiedKanji = data.character.find(a => a.codepoint.cp_value.find(a => a.cp_type === variant.var_type && a.value === variant.value));
+                    const identifiedKanji = kanjidic2Data.character.find(a => a.codepoint.cp_value.find(a => a.cp_type === variant.var_type && a.value === variant.value));
                     if (identifiedKanji) {
                         const kanjiVariantFromDb = await prisma.kanji.findUnique({
                             where: {
@@ -205,8 +221,65 @@ async function init2Db(prisma: PrismaClient) {
                     }
                 });
             }
+
+            // Create antonyms data
+            const antonymEntry = antonymsData.find(a => a.kanji === character.literal);
+            if (antonymEntry) {
+                const antonyms = antonymEntry.antonyms.split(",");
+                for (const antonym of antonyms) {
+                    const kanjiAntonymFromDb = await prisma.kanji.findUnique({
+                        where: {
+                            literal: antonym
+                        }
+                    });
+                    if (kanjiAntonymFromDb) {
+                        kanjiAntonymData.push({
+                            kanji_id: kanji_id,
+                            kanji_antonym_id: kanjiAntonymFromDb.id
+                        })
+                    }
+                }
+            }
+
+            // Create lookalike data
+            const lookalikeEntry = lookalikesData.find(a => a.kanji === character.literal);
+            if (lookalikeEntry) {
+                const lookalikes = lookalikeEntry.similar.split(",");
+                for (const lookalike of lookalikes) {
+                    const kanjiLookalikeFromDb = await prisma.kanji.findUnique({
+                        where: {
+                            literal: lookalike
+                        }
+                    });
+                    if (kanjiLookalikeFromDb) {
+                        kanjiLookalikeData.push({
+                            kanji_id: kanji_id,
+                            kanji_lookalike_id: kanjiLookalikeFromDb.id
+                        })
+                    }
+                }
+            }
+
+            // Create synonym data
+            const synonymEntry = synonymsData.find(a => a.kanji === character.literal);
+            if (synonymEntry) {
+                const synonyms = synonymEntry.synonyms.split(",");
+                for (const synonym of synonyms) {
+                    const kanjiSynonymFromDb = await prisma.kanji.findUnique({
+                        where: {
+                            literal: synonym
+                        }
+                    });
+                    if (kanjiSynonymFromDb) {
+                        kanjiSynonymData.push({
+                            kanji_id: kanji_id,
+                            kanji_synonym_id: kanjiSynonymFromDb.id
+                        })
+                    }
+                }
+            }
         }
-    });
+    };
 
     await prisma.kanji_Codepoint.createMany({
         data: kanjiCodepointData,
@@ -262,5 +335,26 @@ async function init2Db(prisma: PrismaClient) {
         skipDuplicates: true
     }).then(v => {
         console.log(`Created ${v.count.toString()} variant entries`)
+    });
+
+    await prisma.kanji_Antonym.createMany({
+        data: kanjiAntonymData,
+        skipDuplicates: true
+    }).then(v => {
+        console.log(`Created ${v.count.toString()} antonym entries`)
+    });
+
+    await prisma.kanji_Lookalike.createMany({
+        data: kanjiLookalikeData,
+        skipDuplicates: true
+    }).then(v => {
+        console.log(`Created ${v.count.toString()} lookalike entries`)
+    });
+
+    await prisma.kanji_Synonym.createMany({
+        data: kanjiSynonymData,
+        skipDuplicates: true
+    }).then(v => {
+        console.log(`Created ${v.count.toString()} synonym entries`)
     });
 }

@@ -1,8 +1,8 @@
 import { PrismaClient } from '@prisma/client';
-
-import { initKwDb } from './db/initKwDb';
-import { initKanjiDb } from './db/initKanjiDb';
 import { green } from 'ansi-colors';
+
+import { initKanjiDb } from './db/initKanjiDb';
+import { initKwDb } from './db/initKwDb';
 
 const prisma = new PrismaClient()
 
@@ -10,12 +10,11 @@ async function main() {
 
     await initKwDb(prisma);
     await initKanjiDb(prisma);
-
     console.log(green('Finished'))
 
     const asdf = await prisma.kanji.findUnique({
         where: {
-            literal: "愛",
+            literal: "右",
         },
         include: {
             codepoint: true,
@@ -32,10 +31,25 @@ async function main() {
             nanori: true,
             query_code: true,
             reading: true,
-            variant: true
+            variant: true,
+            antonym: {
+                include: {
+                    kanji: true
+                }
+            },
+            lookalike: {
+                include: {
+                    kanji: true
+                }
+            },
+            synonym: {
+                include: {
+                    kanji: true
+                }
+            }
         }
     });
-    console.log(asdf);
+    console.log(JSON.stringify(asdf));
 }
 
 main()
