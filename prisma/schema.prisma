@@ -39,6 +39,9 @@ model Kanji {
   synonym        Kanji_Synonym[] @relation("synonym")
   kanjiToSynonym Kanji_Synonym[] @relation("kanjiToSynonym")
 
+  part        Cross_Kanji_Part[] @relation("part")
+  kanjiToPart Cross_Kanji_Part[] @relation("kanjiToPart")
+
   @@map("kanji")
 }
 
@@ -215,6 +218,66 @@ model Kanji_Misc_RadName {
 }
 
 //
+// Radical
+//
+
+// 1
+
+model Radical {
+  id           Int                @id @default(autoincrement())
+  literal      String             @unique
+  literal_     String?            @unique
+  stroke_count Int
+  number       Int
+  is_variant   Boolean
+  reading      Radical_Reading[]
+  meaning      Radical_Meaning[]
+  part         Cross_Kanji_Part[]
+
+  variant          Radical_Variant[] @relation("variant")
+  radicalToVariant Radical_Variant[] @relation("radicalToVariant")
+
+  @@map("radical")
+}
+
+// 2
+
+model Radical_Reading {
+  id Int @id @default(autoincrement())
+
+  radical    Radical @relation(fields: [radical_id], references: [id], onDelete: Cascade)
+  radical_id Int
+
+  value String
+
+  @@unique([radical_id, value])
+  @@map("radical.reading")
+}
+
+model Radical_Meaning {
+  id Int @id @default(autoincrement())
+
+  radical    Radical @relation(fields: [radical_id], references: [id], onDelete: Cascade)
+  radical_id Int
+
+  value String
+
+  @@unique([radical_id, value])
+  @@map("radical.meaning")
+}
+
+model Radical_Variant {
+  radical    Radical @relation(name: "radicalToVariant", fields: [radical_id], references: [id], onDelete: Cascade)
+  radical_id Int
+
+  radical_variant    Radical @relation(name: "variant", fields: [radical_variant_id], references: [id])
+  radical_variant_id Int
+
+  @@id([radical_id, radical_variant_id])
+  @@map("radical.variant")
+}
+
+//
 // Keyword tables
 //
 
@@ -244,8 +307,8 @@ model KwGrade {
 }
 
 model KwStrokeCount {
-  id    Int    @id @default(autoincrement())
-  value String @unique
+  id    Int @id @default(autoincrement())
+  value Int @unique
 
   strokeCount Kanji_Misc[]
 
@@ -313,4 +376,26 @@ model KwLang {
   kanji_meaning Kanji_Meaning[]
 
   @@map("kw.kanji.lang")
+}
+
+//
+// Cross
+//
+
+model Cross_Kanji_Part {
+  kanji    Kanji @relation(name: "kanjiToPart", fields: [kanji_id], references: [id], onDelete: Cascade)
+  kanji_id Int
+
+  order Int
+
+  part_kanji    Kanji? @relation(name: "part", fields: [part_kanji_id], references: [id])
+  part_kanji_id Int?
+
+  part_radical    Radical? @relation(fields: [part_radical_id], references: [id])
+  part_radical_id Int?
+
+  part_component String?
+
+  @@id([kanji_id, order])
+  @@map("cross.kanji.part")
 }

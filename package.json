@@ -1,11 +1,12 @@
 {
   "author": "Michael Meister",
   "scripts": {
-    "create": "ts-node src/index.ts",
+    "createOutput": "npm run jmdict && npm run kanjidic2 && npm run radkfilex && npm run kradfilex && npm run radicalx",
     "jmdict": "ts-node src/jmdict/toJson.ts",
     "kanjidic2": "ts-node src/kanjidic2/toJson.ts",
     "radkfilex": "ts-node src/radkfilex/toJson.ts",
     "kradfilex": "ts-node src/kradfilex/toJson.ts",
+    "radicalx": "ts-node src/radicalx/init.ts",
     "migrate": "npx prisma migrate dev",
     "push": "npx prisma db push",
     "start": "npx ts-node src/script.ts"

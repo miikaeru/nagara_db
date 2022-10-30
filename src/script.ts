@@ -1,8 +1,10 @@
 import { PrismaClient } from '@prisma/client';
 import { green } from 'ansi-colors';
 
-import { initKanjiDb } from './db/initKanjiDb';
 import { initKwDb } from './db/initKwDb';
+import { initKanjiDb } from './db/initKanjiDb';
+import { initRadicalDb } from './db/initRadicalDb';
+import { initCrossDb } from './db/initCrossDb';
 
 const prisma = new PrismaClient()
 
@@ -10,11 +12,15 @@ async function main() {
 
     await initKwDb(prisma);
     await initKanjiDb(prisma);
-    console.log(green('Finished'))
+    await initRadicalDb(prisma);
+    await initCrossDb(prisma);
+    console.log(green('Finished'));
 
-    const asdf = await prisma.kanji.findUnique({
+
+    /*
+    const testCall = await prisma.kanji.findUnique({
         where: {
-            literal: "右",
+            literal: "犬",
         },
         include: {
             codepoint: true,
@@ -32,24 +38,36 @@ async function main() {
             query_code: true,
             reading: true,
             variant: true,
-            antonym: {
+            kanjiToAntonym: {
                 include: {
-                    kanji: true
+                    kanji_antonym: true
+                } 
+            },
+            kanjiToLookalike: {
+                include: {
+                    kanji_lookalike: true
                 }
             },
-            lookalike: {
+            kanjiToPart: {
                 include: {
-                    kanji: true
+                    part_kanji: true,
+                    part_radical: true,
                 }
             },
-            synonym: {
+            kanjiToSynonym: {
                 include: {
-                    kanji: true
+                    kanji_synonym: true
                 }
-            }
+            },
+            kanjiToVariant: {
+                include: {
+                    kanji_variant: true
+                }
+            },
         }
     });
-    console.log(JSON.stringify(asdf));
+    console.log(JSON.stringify(testCall));
+    */
 }
 
 main()

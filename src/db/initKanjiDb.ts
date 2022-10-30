@@ -24,7 +24,7 @@ const synonymsFile = readFileSync(synonymsPath);
 const synonymsData = JSON.parse(synonymsFile.toString()) as Synonym[];
 
 export async function initKanjiDb(prisma: PrismaClient) {
-    console.log(cyan('Initializing Kanji tables'));
+    console.log(cyan('Initializing kanji tables'));
     await init1Db(prisma);
     await init2Db(prisma);
 }
@@ -86,7 +86,7 @@ async function init2Db(prisma: PrismaClient) {
 
             // Create misc data
             const strokeCountArr = Array.isArray(character.misc.stroke_count) ? character.misc.stroke_count : [character.misc.stroke_count];
-            const kwStrokeCount_id = kwStrokeCountEntries.find(a => a.value === strokeCountArr[0])?.id;
+            const kwStrokeCount_id = kwStrokeCountEntries.find(a => a.value === +strokeCountArr[0])?.id;
 
             const kwGrade_id = kwGradeEntries.find(a => a.value === character.misc.grade)?.id;
             const jlpt_id = kwJLPTEntries.find(a => a.value === character.misc.jlpt)?.id;
